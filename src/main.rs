@@ -273,7 +273,7 @@ fn read_bool_file(filename: &str) -> Option<f64> {
                 Some(0.0)
             }
         }
-        Err(e) => None,
+        Err(_) => None,
     }
 }
 
