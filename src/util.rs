@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 pub fn which<P>(exe_name: P) -> bool
 where
