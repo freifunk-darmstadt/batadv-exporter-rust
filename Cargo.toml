@@ -2,9 +2,25 @@
 name = "batadv-exporter-rust"
 version = "0.1.0"
 authors = ["Andreas Rammhold <andreas@rammhold.de>"]
+license-file = "LICENSE"
+
+[package.metadata.deb]
+license-file = ["LICENSE", "0"]
+extended-description = """\
+Prometheus node exporter for Batadv interfaces.
+"""
+maintainer = "Andreas Rammhold <andreas@rammhold.de>"
+copyright = "2017, Andreas Rammhold <andreas@rammhold.de>"
+depends = "$auto, batctl"
+section = "utility"
+prioirty = "optional"
+assets = [
+        ["target/release/batadv-exporter-rust", "usr/bin/", "755"],
+        ["assets/batadv-exporter-rust.service", "lib/systemd/system/", "644"],
+        ["assets/defaults", "etc/default/batadv-exporter-rust", "644"],
+]
 
 [dependencies]
-futures = "0.1.14"
 prometheus = "0.3.3"
 clap = "2.27.1"
 iron = "0.6.0"

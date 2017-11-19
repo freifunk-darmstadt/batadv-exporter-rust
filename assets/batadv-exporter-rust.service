@@ -1,0 +1,21 @@
+[Unit]
+Description="Prometheus node exporter for batadv interfaces"
+
+[Service]
+EnvironmentFile=/etc/default/batadv-exporter-rust
+ExecStart=/usr/bin/batadv-exporter-rust $ARGS
+Restart=always
+User=root
+Group=root
+Restart=on-failure
+PrivateTmp=yes
+CapabilityBoundingSet=CAP_NET_ADMIN
+MemoryLimit=50M
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectControlGroups=true
+MemoryDenyWriteExecute=true
+RestrictRealtime=true
+
+[Install]
+WantedBy=multi-user.target
