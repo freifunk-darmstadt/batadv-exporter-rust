@@ -302,7 +302,7 @@ fn read_file(filename: &str) -> std::io::Result<String> {
     };
     let mut buf_reader = BufReader::new(fh);
     let mut contents = String::new();
-    buf_reader.read_to_string(&mut contents);
+    buf_reader.read_to_string(&mut contents)?;
     Ok(contents)
 }
 
