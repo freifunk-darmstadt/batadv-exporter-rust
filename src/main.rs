@@ -51,26 +51,26 @@ struct DeviceStatistics {
     dat_cached_reply_tx_packets_total: Gauge,
 
     // Values obtained from `/sys/class/net/$device/msh`
-    aggregated_ogms: Gauge,
-    ap_isolation: Gauge,
-    bonding: Gauge,
-    bridge_loop_avoidance: Gauge,
-    distributed_arp_table: Gauge,
-    fragmentation: Gauge,
+    aggregation_enabled: Gauge,
+    ap_isolation_enabled: Gauge,
+    bonding_enabled: Gauge,
+    bridge_loop_avoidance_enabled: Gauge,
+    distributed_arp_table_enabled: Gauge,
+    fragmentation_enabled: Gauge,
     //gw_bandwidth_rx: Gauge,
     //gw_bandwidth_tx: Gauge,
     //gw_mode: ??? can be many values...
     gw_sel_class: Gauge,
     hop_penalty: Gauge,
     // isolation_mark really?
-    multicast_mode: Gauge,
-    orig_interval: Gauge,
+    mcast_mode_enabled: Gauge,
+    orig_interval_ms: Gauge,
 }
 
 
 macro_rules! init_gauge {
     ($field_name:ident, $labels:expr) => {
-        {
+{
         let name = stringify!($field_name);
         let description = name.replace("_", " ");
         register_gauge!(opts!(
@@ -78,8 +78,18 @@ macro_rules! init_gauge {
             &description,
             $labels
         )).unwrap()
-        }
-    }
+}
+    };
+    ($field_name:ident, $desc:expr, $labels:expr) => {
+{
+        let name = stringify!($field_name);
+        register_gauge!(opts!(
+            name,
+            $desc,
+            $labels
+        )).unwrap()
+}
+    };
 }
 
 impl DeviceStatistics {
@@ -117,16 +127,48 @@ impl DeviceStatistics {
                 labels
             ),
 
-            aggregated_ogms: init_gauge!(aggregated_ogms, labels),
-            ap_isolation: init_gauge!(ap_isolation, labels),
-            bonding: init_gauge!(bonding, labels),
-            bridge_loop_avoidance: init_gauge!(bridge_loop_avoidance, labels),
-            distributed_arp_table: init_gauge!(distributed_arp_table, labels),
-            fragmentation: init_gauge!(fragmentation, labels),
+            aggregation_enabled: init_gauge!(
+                aggregation_enabled,
+                "whether protocol messages can be aggregated into forwarded packets",
+                labels
+            ),
+            ap_isolation_enabled: init_gauge!(
+                ap_isolation_enabled,
+                "whether clients at the access point are isolated",
+                labels
+            ),
+            bonding_enabled: init_gauge!(
+                bonding_enabled,
+                "whether packets can be distributed in a round-robin fashion accross multiple links with similary quality",
+                labels
+            ),
+            bridge_loop_avoidance_enabled: init_gauge!(
+                bridge_loop_avoidance_enabled,
+                "whether the bridge loop avoidance is enabled",
+                labels
+            ),
+            distributed_arp_table_enabled: init_gauge!(
+                distributed_arp_table_enabled,
+                "whether the distributed arp table is enabled",
+                labels
+            ),
+            fragmentation_enabled: init_gauge!(
+                fragmentation_enabled,
+                "whether packets can be fragmented when necessary",
+                labels
+            ),
             gw_sel_class: init_gauge!(gw_sel_class, labels),
-            hop_penalty: init_gauge!(hop_penalty, labels),
-            multicast_mode: init_gauge!(multicast_mode, labels),
-            orig_interval: init_gauge!(orig_interval, labels),
+            hop_penalty: init_gauge!(
+                hop_penalty,
+                "penalty to apply to path metric when routing via this node",
+                labels
+            ),
+            mcast_mode_enabled: init_gauge!(
+                mcast_mode_enabled,
+                "whether multicast optimzations are enabled",
+                labels
+            ),
+            orig_interval_ms: init_gauge!(orig_interval_ms, labels),
         };
         Ok(d)
     }
@@ -193,16 +235,22 @@ impl DeviceStatistics {
                 std::f64::NAN,
             ))
         };
-        set_bool(&mut self.aggregated_ogms, "aggregated_ogms");
-        set_bool(&mut self.ap_isolation, "ap_isolation");
-        set_bool(&mut self.bonding, "bonding");
-        set_bool(&mut self.bridge_loop_avoidance, "bridge_loop_avoidance");
-        set_bool(&mut self.distributed_arp_table, "distributed_arp_table");
-        set_bool(&mut self.fragmentation, "fragmentation");
+        set_bool(&mut self.aggregation_enabled, "aggregated_ogms");
+        set_bool(&mut self.ap_isolation_enabled, "ap_isolation");
+        set_bool(&mut self.bonding_enabled, "bonding");
+        set_bool(
+            &mut self.bridge_loop_avoidance_enabled,
+            "bridge_loop_avoidance",
+        );
+        set_bool(
+            &mut self.distributed_arp_table_enabled,
+            "distributed_arp_table",
+        );
+        set_bool(&mut self.fragmentation_enabled, "fragmentation");
         set_f64(&mut self.gw_sel_class, "gw_sel_class");
         set_f64(&mut self.hop_penalty, "hop_penalty");
-        set_bool(&mut self.multicast_mode, "multicast_mode");
-        set_f64(&mut self.orig_interval, "orig_interval");
+        set_bool(&mut self.mcast_mode_enabled, "multicast_mode");
+        set_f64(&mut self.orig_interval_ms, "orig_interval");
 
         Ok(())
     }
