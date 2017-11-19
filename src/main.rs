@@ -139,7 +139,8 @@ impl DeviceStatistics {
             ),
             bonding_enabled: init_gauge!(
                 bonding_enabled,
-                "whether packets can be distributed in a round-robin fashion accross multiple links with similary quality",
+                "whether packets can be distributed in a round-robin fashion accross" +
+                    "multiple links with similary quality",
                 labels
             ),
             bridge_loop_avoidance_enabled: init_gauge!(
