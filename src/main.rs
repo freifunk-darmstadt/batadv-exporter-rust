@@ -8,17 +8,21 @@ extern crate iron;
 use iron::prelude::*;
 use iron::status;
 
-
 use prometheus::{Gauge, TextEncoder, Encoder};
+use std::collections::HashMap;
+use std::io::BufReader;
+use std::io::Read;
 use std::process::Command;
 use std::str::FromStr;
-use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
 mod util;
 
 struct DeviceStatistics {
     device: String,
+
+    // Values obtained from batctl
+
     tx_packets_total: Gauge,
     tx_bytes_total: Gauge,
     tx_dropped_packets_total: Gauge,
@@ -46,6 +50,23 @@ struct DeviceStatistics {
     dat_put_tx_packets_total: Gauge,
     dat_put_rx_packets_total: Gauge,
     dat_cached_reply_tx_packets_total: Gauge,
+
+    // Values obtained from `/sys/class/net/$device/msh`
+
+    aggregated_ogms: Gauge,
+    ap_isolation: Gauge,
+    bonding: Gauge,
+    bridge_loop_avoidance: Gauge,
+    distributed_arp_table: Gauge,
+    fragmentation: Gauge,
+    //gw_bandwidth_rx: Gauge,
+    //gw_bandwidth_tx: Gauge,
+    //gw_mode: ??? can be many values...
+    gw_sel_class: Gauge,
+    hop_penalty: Gauge,
+    // isolation_mark really?
+    multicast_mode: Gauge,
+    orig_interval: Gauge,
 }
 
 
@@ -97,6 +118,18 @@ impl DeviceStatistics {
                 dat_cached_reply_tx_packets_total,
                 labels
             ),
+
+            aggregated_ogms: init_gauge!(aggregated_ogms, labels),
+            ap_isolation: init_gauge!(ap_isolation, labels),
+            bonding: init_gauge!(bonding, labels),
+            bridge_loop_avoidance: init_gauge!(bridge_loop_avoidance, labels),
+            distributed_arp_table: init_gauge!(distributed_arp_table, labels),
+            fragmentation: init_gauge!(fragmentation, labels),
+            gw_sel_class: init_gauge!(gw_sel_class, labels),
+            hop_penalty: init_gauge!(hop_penalty, labels),
+            multicast_mode: init_gauge!(multicast_mode, labels),
+            orig_interval: init_gauge!(orig_interval, labels),
+
         };
         Ok(d)
     }
@@ -146,15 +179,73 @@ impl DeviceStatistics {
 
     }
 
-    fn update_sysfs_statistics() -> std::io::Result<()> {
-        // FIXME: implement
-        Ok(()
+    fn update_sysfs_statistics(&mut self) -> std::io::Result<()> {
+
+        let path = format!("/sys/class/net/{}/mesh", self.device);
+
+        let set_bool = |field : &mut Gauge, suffix : &str| field.set(read_bool_file(&format!("{}/{}", path, suffix)).unwrap_or(0.0));
+        let set_f64 = |field : &mut Gauge, suffix : &str| field.set(read_f64_file(&format!("{}/{}", path, suffix)).unwrap_or(std::f64::NAN));
+        set_bool(&mut self.aggregated_ogms, "aggregated_ogms");
+        set_bool(&mut self.ap_isolation, "ap_isolation");
+        set_bool(&mut self.bonding, "bonding");
+        set_bool(&mut self.bridge_loop_avoidance, "bridge_loop_avoidance");
+        set_bool(&mut self.distributed_arp_table, "distributed_arp_table");
+        set_bool(&mut self.fragmentation, "fragmentation");
+        set_f64(&mut self.gw_sel_class, "gw_sel_class");
+        set_f64(&mut self.hop_penalty, "hop_penalty");
+        set_bool(&mut self.multicast_mode, "multicast_mode");
+        set_f64(&mut self.orig_interval, "orig_interval");
+
+        Ok(())
     }
 
     fn update(&mut self) -> std::io::Result<()> {
         self.update_batctl_statistics()?;
         self.update_sysfs_statistics()?;
+
+        Ok(())
     }
+}
+
+fn read_bool_file(filename : &str) -> Option<f64> {
+    match read_file(filename) {
+        Ok(string) => {
+            let string = string.trim();
+            if string == "enabled" {
+                Some(1.0)
+            } else {
+                Some(0.0)
+            }
+        }
+        Err(e) => None
+    }
+}
+
+fn read_f64_file(filename : &str) -> Option<f64> {
+    match read_file(filename) {
+        Ok(string) => match f64::from_str(&string.trim()) {
+            Ok(r) => {
+                println!("f64: {}", r);
+                Some(r)
+            }
+            _ => None
+        },
+        _ => None
+    }
+}
+
+fn read_file(filename : &str) -> std::io::Result<String> {
+    let fh = match std::fs::File::open(filename) {
+        Ok(fh) => fh,
+        Err(e) => {
+            println!("failed to read from string: {}", filename);
+            return Err(e);
+        }
+    };
+    let mut buf_reader = BufReader::new(fh);
+    let mut contents = String::new();
+    buf_reader.read_to_string(&mut contents);
+    Ok(contents)
 }
 
 
