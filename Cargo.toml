@@ -1,0 +1,10 @@
+[package]
+name = "batadv-exporter-rust"
+version = "0.1.0"
+authors = ["Andreas Rammhold <andreas@rammhold.de>"]
+
+[dependencies]
+futures = "0.1.14"
+prometheus = "0.3.3"
+clap = "2.27.1"
+iron = "0.6.0"
