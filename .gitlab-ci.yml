@@ -27,7 +27,7 @@ rustfmt:
   stage: syntax
   image: andir/docker-rust:stable-stable
   script:
-    - cargo fmt -- write-mode diff
+    - cargo fmt -- --write-mode diff
 
 test-jessie:
   <<: *test
