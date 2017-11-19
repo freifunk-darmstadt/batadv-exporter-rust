@@ -22,7 +22,6 @@ struct DeviceStatistics {
     device: String,
 
     // Values obtained from batctl
-
     tx_packets_total: Gauge,
     tx_bytes_total: Gauge,
     tx_dropped_packets_total: Gauge,
@@ -52,7 +51,6 @@ struct DeviceStatistics {
     dat_cached_reply_tx_packets_total: Gauge,
 
     // Values obtained from `/sys/class/net/$device/msh`
-
     aggregated_ogms: Gauge,
     ap_isolation: Gauge,
     bonding: Gauge,
@@ -129,7 +127,6 @@ impl DeviceStatistics {
             hop_penalty: init_gauge!(hop_penalty, labels),
             multicast_mode: init_gauge!(multicast_mode, labels),
             orig_interval: init_gauge!(orig_interval, labels),
-
         };
         Ok(d)
     }
@@ -143,7 +140,10 @@ impl DeviceStatistics {
 
         let get = |key| match statistics.get(key) {
             Some(v) => *v,
-            None => { println!("{} is undefined!", key); zero}
+            None => {
+                println!("{} is undefined!", key);
+                zero
+            }
         }; //_or(&zero);
 
         self.tx_packets_total.set(get("tx"));
@@ -183,8 +183,16 @@ impl DeviceStatistics {
 
         let path = format!("/sys/class/net/{}/mesh", self.device);
 
-        let set_bool = |field : &mut Gauge, suffix : &str| field.set(read_bool_file(&format!("{}/{}", path, suffix)).unwrap_or(0.0));
-        let set_f64 = |field : &mut Gauge, suffix : &str| field.set(read_f64_file(&format!("{}/{}", path, suffix)).unwrap_or(std::f64::NAN));
+        let set_bool = |field: &mut Gauge, suffix: &str| {
+            field.set(read_bool_file(&format!("{}/{}", path, suffix)).unwrap_or(
+                0.0,
+            ))
+        };
+        let set_f64 = |field: &mut Gauge, suffix: &str| {
+            field.set(read_f64_file(&format!("{}/{}", path, suffix)).unwrap_or(
+                std::f64::NAN,
+            ))
+        };
         set_bool(&mut self.aggregated_ogms, "aggregated_ogms");
         set_bool(&mut self.ap_isolation, "ap_isolation");
         set_bool(&mut self.bonding, "bonding");
@@ -207,7 +215,7 @@ impl DeviceStatistics {
     }
 }
 
-fn read_bool_file(filename : &str) -> Option<f64> {
+fn read_bool_file(filename: &str) -> Option<f64> {
     match read_file(filename) {
         Ok(string) => {
             let string = string.trim();
@@ -217,24 +225,26 @@ fn read_bool_file(filename : &str) -> Option<f64> {
                 Some(0.0)
             }
         }
-        Err(e) => None
+        Err(e) => None,
     }
 }
 
-fn read_f64_file(filename : &str) -> Option<f64> {
+fn read_f64_file(filename: &str) -> Option<f64> {
     match read_file(filename) {
-        Ok(string) => match f64::from_str(&string.trim()) {
-            Ok(r) => {
-                println!("f64: {}", r);
-                Some(r)
+        Ok(string) => {
+            match f64::from_str(&string.trim()) {
+                Ok(r) => {
+                    println!("f64: {}", r);
+                    Some(r)
+                }
+                _ => None,
             }
-            _ => None
-        },
-        _ => None
+        }
+        _ => None,
     }
 }
 
-fn read_file(filename : &str) -> std::io::Result<String> {
+fn read_file(filename: &str) -> std::io::Result<String> {
     let fh = match std::fs::File::open(filename) {
         Ok(fh) => fh,
         Err(e) => {
