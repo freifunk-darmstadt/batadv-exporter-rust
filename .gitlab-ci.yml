@@ -1,0 +1,46 @@
+stages:
+  - syntax
+  - test
+  - package
+
+.jessie_template: &jessie
+  image: andir/docker-rust:jessie-stable
+
+.stretch_template: &stretch
+  image: andir/docker-rust:stretch-stable
+
+.test_template: &test
+  stage: test
+  script:
+    # test compilation
+    - cargo build --release
+    - cargo test # TODO
+
+.package_template: &package
+  stage: package
+  script:
+    - cargo install cargo-deb
+    - cargo deb
+    # FIXME: upload packages in release mode
+
+rustfmt:
+  stage: syntax
+  image: andir/docker-rust:stable-stable
+  script:
+    - cargo fmt -- write-mode diff
+
+test-jessie:
+  <<: *test
+  <<: *jessie
+
+test-stretch:
+  <<: *test
+  <<: *stretch
+
+package-jessie:
+  <<: *package
+  <<: *jessie
+
+package-stretch:
+  <<: *package
+  <<: *stretch
