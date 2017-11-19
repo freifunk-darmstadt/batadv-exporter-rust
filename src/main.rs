@@ -102,8 +102,8 @@ impl DeviceStatistics {
     }
 
     fn update_batctl_statistics(&mut self) -> std::io::Result<()> {
-        let raw_statistics = get_batman_statistics(&self.device)?;
-        let statistics = parse_batman_statistics(&raw_statistics).unwrap();
+        let raw_statistics = get_batctl_statistics(&self.device)?;
+        let statistics = parse_batctl_statistics(&raw_statistics).unwrap();
         println!("statistics: {:?}", statistics);
 
         let zero: f64 = 0.0;
@@ -158,7 +158,7 @@ impl DeviceStatistics {
 }
 
 
-fn get_batman_statistics(device: &str) -> std::io::Result<String> {
+fn get_batctl_statistics(device: &str) -> std::io::Result<String> {
     let output = match Command::new("batctl").args(&["-m", device, "s"]).output() {
         Ok(o) => o,
         Err(e) => return Err(e),
@@ -167,7 +167,7 @@ fn get_batman_statistics(device: &str) -> std::io::Result<String> {
     Ok(String::from_utf8(output.stdout).unwrap())
 }
 
-fn parse_batman_statistics(stats: &str) -> Result<HashMap<String, f64>, String> {
+fn parse_batctl_statistics(stats: &str) -> Result<HashMap<String, f64>, String> {
     let values: Vec<(&str, f64)> = stats
         .split("\n")
         .map(|l| l.trim())
